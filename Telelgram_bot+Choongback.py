@@ -28,9 +28,9 @@ def Finder(text):
 
     ### 예 외 처 리 & 국 어 사 전
 
-    jun = '준영'
-    target_list = ['너', '걔', '우리', jun, '유환',
-                   '충석']  # 준영 유환 충석은 채팅장의 참여자 이름으로 여기다가 word2vec사용해서 이름과 관련된 별명 나오면 전처리 하는거 넣으면 ㄱㅊ할듯?
+    jun = '준*'
+    target_list = ['너', '걔', '우리', jun, '*환',
+                   '*석']
     target_num = 0
     target_num_count = 0
 
