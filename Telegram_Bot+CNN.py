@@ -23,7 +23,7 @@ def Finder(text):
     ## 리스트(명사) 순회하면서 욕(검출된) 제거
 
     textnum = 0
-    swear = '씨발'
+    swear = '*발'
     #print(length)
     for (first, last) in target:
 
@@ -38,9 +38,9 @@ def Finder(text):
 
     ### 예 외 처 리 & 국 어 사 전
 
-    jun = '준영'
-    target_list = ['너', '걔', '우리', jun, '유환',
-                   '충석']  # 준영 유환 충석은 채팅장의 참여자 이름으로 여기다가 word2vec사용해서 이름과 관련된 별명 나오면 전처리 하는거 넣으면 ㄱㅊ할듯?
+    jun = '준*'
+    target_list = ['너', '걔', '우리', jun, '유*',
+                   '충*']
     target_num = 0
     target_num_count = 0
 
@@ -115,7 +115,6 @@ def jamo_combine(word):
 
     while index < len(word):
 
-        # 3개의 char를 보아 글자가 만들어지면 만들고 아니면 1개의 char만 추가한다.
         try:
             cho = CHOSUNGS.index(word[index]) * 21 * 28
             joong = JOONGSUNGS.index(word[index + 1]) * 28
@@ -150,11 +149,9 @@ all_Sentences = all_Sentences.drop([0])
 all_Sentences
 
 
-# 특수문자나 한자 등이 안날라 갔을 경우를 처리
 import re
-pattern = re.compile("[^ㄱ-ㅎㅏ-ㅣ가-힣0-9a-zA-Z ]") # 한글 숫자 영어 공백 말고 제거
+pattern = re.compile("[^ㄱ-ㅎㅏ-ㅣ가-힣0-9a-zA-Z ]")
 
-# 각 단어에 해당 해당 정규표현식 적용
 def clear_word(word):
     word = re.sub(pattern, "", word)
     return word
@@ -175,50 +172,37 @@ len(sentence_list)
 
 # fasttext 적용
 from gensim.models import FastText
-# 임베딩 차원: 50
-# window size: 좌우 2단어 비속어는 좌우단어와 별로 연관이 없다고 판단...
-# min_count: 최소 3번 등장한 단어들
-# workers: -1 전부!!
-# sg: skipgram이 더 성능이 좋기 때문
-# min_n max_n : n-gram단위인데 한글자가 3글자라 최소 자모3개부터 최대 6개까지 ngram하기로 하였다. 1글자 ~ 2글자
-# iter: 반복횟수
+
 model = FastText(sentence_list, size=50, window=2, min_count=3, workers=4, sg=1, min_n=3, max_n=6, iter=10)
 ###
 model.save("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_model")
 
 len(model.wv.vocab)
 """
-#FastText 부분
+
 data = pd.read_csv("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\badwww.csv", header=None)
 
-# int형으로 문제가 발생하여 전부 str 타입으로 설정
 data[0] = data[0].astype("str")
 data[1] = data[1].astype("str")
 data[2] = data[2].astype("str")
 
-# 빈칸이 nan되는 문제 다시 공백으로 체인지
 data[0] = data[0].apply(lambda x: " " if x == 'nan' else x)
 data[1] = data[1].apply(lambda x: " " if x == 'nan' else x)
 data[2] = data[2].apply(lambda x: " " if x == 'nan' else x)
 
 
-# 데이터 한 column으로 합치기
 data['trigram'] = data[0] + "$" + data[1] + "$"+ data[2]
 del data[0], data[1], data[2] # 합친후에 삭제
 
-# 자모분리
 data['trigram'] = data['trigram'].apply(lambda x: jamo_split(x))
-# ㅂㅏ_ㅂㅗ_ 가 한 word가 될 수 있도록 만들어주는 과정
 data['trigram'] = data['trigram'].apply(lambda x: x.split("$"))
 
 data.head() # 3column이 label이다.
 
-# fasttext 모델 불러오기
 from gensim.models import FastText
 
 embedding_model = FastText.load("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_model")
 
-# 각 단어를 벡터화 시켜주는 과정 3 x 50(embedding dimension)
 data['trigram'] = data['trigram'].apply(lambda x: [embedding_model[_] for _ in x])
 
 data.head()
@@ -228,14 +212,12 @@ data.to_json("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\labeled_dat
 import pandas as pd
 import numpy as np
 
-# 벡터화된 데이터 불러오기
 data = pd.read_json("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\labeled_data.json")
 data.columns = ["label", "trigram"]
 
-# 3 x 50 -> 150 차원으로 flastten해주는 과정
 data['trigram'] = data['trigram'].apply(lambda x: (np.array(x).reshape(-1)))
 
-# train/test 데이터 분리
+
 from sklearn.model_selection import train_test_split
 
 y = data.pop('label')
@@ -243,7 +225,7 @@ X = data
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# keras 데이터 형식에 맞게 변환
+
 X_train = np.array(X_train['trigram'].tolist())
 X_test = np.array(X_test['trigram'].tolist())
 y_train = y_train.values
@@ -253,7 +235,7 @@ X_train.shape  # row개수 x embeedding차원
 y_train.shape  # row개수 x 1
 
 
-# keras 모델에 넣기 위한 reshape 과정
+
 def reshape(df, dim):
     return df.reshape(df.shape[0], dim, 1)
 
@@ -262,7 +244,7 @@ X_train = reshape(X_train, 150)
 X_test = reshape(X_test, 150)
 X_train.shape
 
-# f1 score를 알기 위해 정의한 함수
+
 # 출처: https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
 from keras import backend as K
 
@@ -326,7 +308,7 @@ plt.xlabel('epoch')
 plt.legend(['train_acc', 'val_acc', 'f1_score'], loc='upper left')
 plt.savefig("1DCNN reuslt.png")
 plt.show()
-# train에 대해서 오버피팅 된다. val은 조금 증가하고 왔다갔다한다. epoch은 20정도만해도  충분한 것 같다.
+
 
 model.save("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\cnn_model")
 """
@@ -339,13 +321,9 @@ from sklearn.externals import joblib
 embedding_model = FastText.load("fasttext_model")
 cnn_model = load_model("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\cnn_model", custom_objects={'f1_m': f1_m})
 
-#from JamoSplit import jamo_split
+
 
 import re
-
-# |는 OR 입니다. => (씨 or 시) AND (벌 or 빨 or 발 or 바)
-# 예) 쌍1년, 씨12발, 꼬a추
-# 중간에 2글자 까지 들어갈 수 있도록 허용하였습니다.
 
 patternList = [
     re.compile('((쌍|썅).{0,2}(놈|년))'),
@@ -400,7 +378,6 @@ def return_bad_words_index(content, mode=0):
             content = re.sub(pattern, "**", content)
         return content
 
-    # 비속어 위치와 trigram 리턴
     else:
         # 문장의 음절과 어절간의 리스트 생성: 어절의 위치를 뽑기 위함
         token_position = []
@@ -411,18 +388,18 @@ def return_bad_words_index(content, mode=0):
             if char == " ":
                 token_index += 1
 
-        # 정규식 표현을 통해 비속어 위치 찾기
+    
         badwords = []
         for pattern in patternList:
             matchObjs = re.finditer(pattern, content)
-            badwords += [token_position[obj.span()[0]] for obj in matchObjs]  # 해당 단어가 속한 어절의 위치
+            badwords += [token_position[obj.span()[0]] for obj in matchObjs] 
 
-        content = [" "] + content.split(" ") + [" "]  # 어절을 반환하기 위한 스플릿 & 맨앞, 맨뒤 padding
+        content = [" "] + content.split(" ") + [" "] 
 
-        badwords = list(set(badwords))  # 중복제거
+        badwords = list(set(badwords))
 
     return [(content[index], content[index + 1], content[index + 2], index) for index in
-            badwords]  # trigram(3어절 반환) & 단어 위치
+            badwords] 
 
 def DETACH(korean_word):
     LIST = []
@@ -439,13 +416,9 @@ def DETACH(korean_word):
 
 
 def chunks(l, n, trigram_list):
-    '''
-    vectroize 할 때 필요한 리스트를 청크별로 나누는 함수
-    input : list, n(청크 단위)
-    output : (n개씩 묶어진 list, word_index(단어위치))
-    '''
     for i in range(0, len(l), n):
         yield (l[i:i + n], trigram_list[i // n][-1])
+        
 ##path
 Path = os.path.dirname(os.path.realpath(__file__))
 print(Path)
@@ -469,20 +442,20 @@ def Save_to_csv(i,n,t):
 text="2018년은 충석이의 해이다. 씨발 충빡이는 너무 멋잇다. 충개쌔끼 "
 
 
-trigram_list = return_bad_words_index(text, mode=1) # 욕설의 형태를 띄는 곳에가서 좌우단어 포함하여 trigram으로 반환
+trigram_list = return_bad_words_index(text, mode=1)
 
 trigram_vector = np.array(
         [np.array(embedding_model[jamo_split(word)]) for trigram in trigram_list for word in trigram[:-1]])
 trigram_vector = np.array(
-    list(chunks(trigram_vector, 3, trigram_list)))  # 50차원의 3개의 vector가 1개의 trigram에 들어가기위해 나눠주는 과정
+    list(chunks(trigram_vector, 3, trigram_list))) 
 trigram_vector = np.array(
-    [np.append(_[0].flatten(), _[1]) for _ in trigram_vector])  # 3 x 50 을 150차원으로 flatten + word index = 151dim
+    [np.append(_[0].flatten(), _[1]) for _ in trigram_vector]) 
 
 
-word_index = np.int8(trigram_vector[:, -1])  # word_index 단어위치를 뽑아내기
-trigram_vector = np.delete(trigram_vector, -1, axis=1)  # word_index 지우기
+word_index = np.int8(trigram_vector[:, -1])
+trigram_vector = np.delete(trigram_vector, -1, axis=1)
 
-trigram_vector = trigram_vector.reshape(trigram_vector.shape[0], trigram_vector.shape[1], 1)  # keras input 맞춰주기
+trigram_vector = trigram_vector.reshape(trigram_vector.shape[0], trigram_vector.shape[1], 1) 
 
 # cnn
 print("단어위치\n", word_index)
@@ -518,27 +491,26 @@ def Opitimze_message(bot, update):
     #bot.send_message(chat_id=update.message.chat_id, text=target)
     print(update.message.text,"is it ok?")
     test = return_bad_words_index(update.message.text, mode=1)
-    print(test,"test%%%%")
-    # vectorize : trigram을 150차원의 벡터 + word index형태의 리스트로 만들어주는 과정
+    print(test,"test%%%%")=
     trigram_vector = np.array(
         [np.array(embedding_model[jamo_split(word)]) for trigram in test for word in trigram[:-1]])
     trigram_vector = np.array(
-        list(chunks(trigram_vector, 3, test)))  # 50차원의 3개의 vector가 1개의 trigram에 들어가기위해 나눠주는 과정
+        list(chunks(trigram_vector, 3, test)))
     trigram_vector = np.array(
-        [np.append(_[0].flatten(), _[1]) for _ in trigram_vector])  # 3 x 50 을 150차원으로 flatten + word index = 151dim
+        [np.append(_[0].flatten(), _[1]) for _ in trigram_vector])
 
     print(trigram_vector.shape,"trigram shape1 &&&&")
 
-    word_index = np.int8(trigram_vector[:, -1])  # word_index 단어위치를 뽑아내기
-    trigram_vector = np.delete(trigram_vector, -1, axis=1)  # word_index 지우기
+    word_index = np.int8(trigram_vector[:, -1])  
+    trigram_vector = np.delete(trigram_vector, -1, axis=1)  
 
-    trigram_vector = trigram_vector.reshape(trigram_vector.shape[0], trigram_vector.shape[1], 1)  # keras input 맞춰주기
+    trigram_vector = trigram_vector.reshape(trigram_vector.shape[0], trigram_vector.shape[1], 1)  
 
     print(trigram_vector.shape,"trigram shape2 &&&&")
     # Print
     print("단어위치\n", word_index)
     print("예측 확률 값\n", cnn_model.predict(trigram_vector))
-    result = cnn_model.predict(trigram_vector) > 0.65  # 0.65보다 높으면 욕설
+    result = cnn_model.predict(trigram_vector) > 0.65 
     print(result)
     if (True in result):
         send_warning = update.message.from_user.username +"님 , 욕설을 그만둬 주세요. "
@@ -550,10 +522,8 @@ def Opitimze_message(bot, update):
         print(update.message.text)
     result = result.reshape(-1).tolist()
     ##print("reeeeesult : ",list(zip(result)),"%%%%%%%%%%%%%%%%%")
-    # result = [_==1 for _ in result] # Boolean list로 만들기
-    print("Class와 단어 위치\n", list(zip(result, word_index.tolist())))
 
-    # 결과 확인
+    print("Class와 단어 위치\n", list(zip(result, word_index.tolist())))
     print("비속어\n", np.array(test)[np.array(result)])
     print("비속어가 아닌문장\n", np.array(test)[np.array(result) == False])
 
