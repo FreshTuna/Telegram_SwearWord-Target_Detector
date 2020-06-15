@@ -13,7 +13,7 @@ def Finder(text):
     ## 리스트(명사) 순회하면서 욕(검출된) 제거
 
     textnum = 0
-    swear = '씨발'
+    swear = '*발'
     print(length)
     for (first, last) in target:
 
