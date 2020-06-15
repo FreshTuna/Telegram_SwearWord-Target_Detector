@@ -18,7 +18,7 @@ def Save_to_csv(i,n):
     BadWordList = BadWordList.append({'chatID': i,'Sentence': n },ignore_index=True)
     print(BadWordList.head)
 
-Save_to_csv(10,"Fuckme")
+Save_to_csv(10,"NewList")
 import telegram
 
 Telegram_token = '888453032:AAEzGw_nzJXG9p5wNniyvyT0aTvrDOriSpI'
