@@ -15,7 +15,10 @@
 
 
 ## Performance
-.[pic](./Dropout0.4.png)
+![D4](./Dropout0.4.png)
+![D2](./Dropout0.2.png)
+![D6](./Dropout0.6.png)
+![e5](./epoch50.png)
 
 
 ## Reference : 
