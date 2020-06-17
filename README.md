@@ -15,7 +15,7 @@
 
 
 ## Performance
-
+.[pic](./Dropout0.4.png)
 
 
 ## Reference : 
