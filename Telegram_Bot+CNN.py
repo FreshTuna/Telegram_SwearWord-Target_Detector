@@ -9,7 +9,7 @@ TOTAL = CHOSUNGS + JOONGSUNGS + JONGSUNGS
 import requests
 from konlpy.tag import Okt
 from bs4 import BeautifulSoup
-
+import re
 
 
 ## 채팅로그(text) 받고 명사만 따오기
@@ -134,40 +134,31 @@ import pandas as pd
 import numpy as np
 
 """
-all_Sentences = pd.read_csv("DATA_10.csv",header=None)
+Crawled_data = pd.read_csv("DATA_10.csv",header=None)
 
-all_Sentences.drop_duplicates(inplace=True)
-print(len(all_Sentences))
-
-for col in all_Sentences.columns:
-    if col == 0:
-        del all_Sentences[col]
-        print(all_Sentences)
-
-all_Sentences = all_Sentences.rename(columns={1:0})
-all_Sentences = all_Sentences.drop([0])
-all_Sentences
+Crawled_data.drop_duplicates(inplace=True)
 
 
-import re
-pattern = re.compile("[^ㄱ-ㅎㅏ-ㅣ가-힣0-9a-zA-Z ]")
+first_column = Crawled_data.columns[0]
 
-def clear_word(word):
-    word = re.sub(pattern, "", word)
-    return word
+Crawled_data = Crawled_data.drop([first_column], axis=1)
 
-all_Sentences[0] = all_Sentences.astype('str')
-all_Sentences[0] = all_Sentences[0].apply(lambda x: clear_word(x))
-
-all_Sentences.reset_index(inplace=True)
-all_Sentences.drop('index', axis=1, inplace=True)
-all_Sentences = all_Sentences[1:]   
+Crawled_data = Crawled_data.drop([0])
+Crawled_data = Crawled_data.rename(columns={1:0}, inplace=False)
 
 
-all_Sentences[0] = all_Sentences[0].apply(lambda x: jamo_split(x))
-all_Sentences[0] = all_Sentences[0].apply(lambda x: x.split(" "))
+exceptList = re.compile("[^ㄱ-ㅎㅏ-ㅣ가-힣0-9a-zA-Z ]")
 
-sentence_list = list(all_Sentences[0])
+def delete_Character(Sentence):
+    Sentence = re.sub(exceptList,"", Sentence)
+    return Sentence
+    
+Crawled_data[0] = Crawled_data[0].apply(lambda x: delet_Character(x))
+
+Crawled_data[0] = Crawled_data[0].apply(lambda x: jamo_split(x))
+Crawled_data[0] = Crawled_data[0].apply(lambda x: x.split(" "))
+
+sentence_list = list(Crawled_data[0])
 len(sentence_list)
 
 # fasttext 적용
@@ -180,22 +171,22 @@ model.save("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_mode
 len(model.wv.vocab)
 """
 
-data = pd.read_csv("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\badwww.csv", header=None)
-
-data[0] = data[0].astype("str")
-data[1] = data[1].astype("str")
-data[2] = data[2].astype("str")
-
-data[0] = data[0].apply(lambda x: " " if x == 'nan' else x)
-data[1] = data[1].apply(lambda x: " " if x == 'nan' else x)
-data[2] = data[2].apply(lambda x: " " if x == 'nan' else x)
+data = pd.read_csv("badwww.csv", header=None)
+print(data)
+blank = " "
+for i in range(0,3):
+    data[i] = data[i].astype("str")
+    data[i] = data[i].apply(lambda x: blank if x == 'nan' else x)
 
 
-data['trigram'] = data[0] + "$" + data[1] + "$"+ data[2]
-del data[0], data[1], data[2] # 합친후에 삭제
+data['n-gram'] = data[0] + "$" + data[1] + "$"+ data[2]
+data['n-gram'] = data['n-gram'].apply(lambda x: x.split("$"))
 
-data['trigram'] = data['trigram'].apply(lambda x: jamo_split(x))
-data['trigram'] = data['trigram'].apply(lambda x: x.split("$"))
+data['n-gram'] = data[0] + "$" + data[1] + "$"+ data[2]
+del data[0], data[1], data[2] 
+
+data['n-gram'] = data['n-gram'].apply(lambda x: jamo_split(x))
+data['n-gram'] = data['n-gram'].apply(lambda x: x.split("$"))
 
 data.head() # 3column이 label이다.
 
