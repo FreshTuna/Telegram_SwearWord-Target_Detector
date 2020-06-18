@@ -10,6 +10,12 @@ import requests
 from konlpy.tag import Okt
 from bs4 import BeautifulSoup
 import re
+from gensim.models import FastText
+
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
 
 
 ## 채팅로그(text) 받고 명사만 따오기
@@ -188,28 +194,18 @@ del data[0], data[1], data[2]
 data['n-gram'] = data['n-gram'].apply(lambda x: jamo_split(x))
 data['n-gram'] = data['n-gram'].apply(lambda x: x.split("$"))
 
-data.head() # 3column이 label이다.
+embedder = FastText.load("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_model")
 
-from gensim.models import FastText
-
-embedding_model = FastText.load("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_model")
-
-data['n-gram'] = data['n-gram'].apply(lambda x: [embedding_model[_] for _ in x])
-
-data.head()
+data['n-gram'] = data['n-gram'].apply(lambda x: [embedder[_] for _ in x])
 
 data.to_json("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\labeled_data.json")
 
-import pandas as pd
-import numpy as np
 
 data = pd.read_json("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\labeled_data.json")
 data.columns = ["label", "n-gram"]
 
 data['n-gram'] = data['n-gram'].apply(lambda x: (np.array(x).reshape(-1)))
 
-
-from sklearn.model_selection import train_test_split
 
 y = data.pop('label')
 X = data
@@ -309,12 +305,9 @@ from keras.models import load_model
 from sklearn.externals import joblib
 
 
-embedding_model = FastText.load("fasttext_model")
 cnn_model = load_model("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\cnn_model", custom_objects={'f1_m': f1_m})
 
 
-
-import re
 
 patternList = [
     re.compile('((쌍|썅).{0,2}(놈|년))'),
@@ -436,7 +429,7 @@ text="2018년은 충석이의 해이다. 씨발 충빡이는 너무 멋잇다. �
 trigram_list = return_bad_words_index(text, mode=1)
 
 trigram_vector = np.array(
-        [np.array(embedding_model[jamo_split(word)]) for trigram in trigram_list for word in trigram[:-1]])
+        [np.array(embedder[jamo_split(word)]) for trigram in trigram_list for word in trigram[:-1]])
 trigram_vector = np.array(
     list(chunks(trigram_vector, 3, trigram_list))) 
 trigram_vector = np.array(
@@ -484,7 +477,7 @@ def Opitimze_message(bot, update):
     test = return_bad_words_index(update.message.text, mode=1)
     print(test,"test%%%%")=
     trigram_vector = np.array(
-        [np.array(embedding_model[jamo_split(word)]) for trigram in test for word in trigram[:-1]])
+        [np.array(embedder[jamo_split(word)]) for trigram in test for word in trigram[:-1]])
     trigram_vector = np.array(
         list(chunks(trigram_vector, 3, test)))
     trigram_vector = np.array(
