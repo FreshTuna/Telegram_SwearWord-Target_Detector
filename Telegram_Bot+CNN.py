@@ -194,7 +194,7 @@ from gensim.models import FastText
 
 embedding_model = FastText.load("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\fasttext_model")
 
-data['trigram'] = data['trigram'].apply(lambda x: [embedding_model[_] for _ in x])
+data['n-gram'] = data['n-gram'].apply(lambda x: [embedding_model[_] for _ in x])
 
 data.head()
 
@@ -204,9 +204,9 @@ import pandas as pd
 import numpy as np
 
 data = pd.read_json("C:\\Users\\junyoung\\PycharmProjects\\Telegram_Plugin\\labeled_data.json")
-data.columns = ["label", "trigram"]
+data.columns = ["label", "n-gram"]
 
-data['trigram'] = data['trigram'].apply(lambda x: (np.array(x).reshape(-1)))
+data['n-gram'] = data['n-gram'].apply(lambda x: (np.array(x).reshape(-1)))
 
 
 from sklearn.model_selection import train_test_split
@@ -217,8 +217,8 @@ X = data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 
-X_train = np.array(X_train['trigram'].tolist())
-X_test = np.array(X_test['trigram'].tolist())
+X_train = np.array(X_train['n-gram'].tolist())
+X_test = np.array(X_test['n-gram'].tolist())
 y_train = y_train.values
 y_test = y_test.values
 
